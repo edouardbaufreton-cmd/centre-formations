@@ -37,7 +37,15 @@ body.dark .notice{background:#422006;color:#fde68a}
 </div>
 <section id="home"></section><section id="today" class="hidden"></section><section id="courses" class="hidden"></section><section id="tools" class="hidden"></section>
 </main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+/* V4 — Synchronisation PC <-> téléphone
+   Après création du projet Supabase, renseigne SUPABASE_URL et SUPABASE_ANON_KEY. */
+const SUPABASE_URL = "https://omefajbtntsysduipug.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_Cn1vBZvv_2hdIag4GePSPQ_vmSz5jvX";
+const cloudEnabled = SUPABASE_URL.startsWith("http") && SUPABASE_ANON_KEY.length > 20;
+const supabaseClient = cloudEnabled ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
 const KEY="centre_formations_v3";
 const initial={"version": 3, "settings": {"dark": false}, "courses": [{"id": "colere", "name": "Maîtrise et transformation de la colère", "total": 30, "day": 1, "completed": [], "notes": {}, "lessons": {"1": {"title": "La colère est un signal, pas un ordre", "duration": "10 min", "lesson": "La colère apparaît souvent lorsqu'une valeur, une limite ou un besoin important semble menacé. L'émotion prépare le corps à agir : elle augmente l'énergie, focalise l'attention et pousse vers une réponse rapide. Le point clé est de distinguer l'émotion de l'action : ressentir de la colère ne t'oblige pas à agir sous son impulsion.", "example": "Quelqu'un critique ton travail. Première réaction : envie de répondre immédiatement. Pause : tu identifies la critique, ce qu'elle touche chez toi, puis tu choisis une réponse utile.", "exercise": "Repense à une situation récente. Note : 1) déclencheur, 2) sensation corporelle, 3) pensée automatique, 4) impulsion, 5) action réellement choisie.", "question": "Qu'est-ce que ta colère cherchait probablement à protéger ou à défendre ?", "reflection": "Écris quelques lignes dans tes notes."}}}, {"id": "eau", "name": "Eau H₂O & biomécanismes du corps", "total": 30, "day": 1, "completed": [], "notes": {}, "lessons": {"1": {"title": "Pourquoi l'eau est essentielle au corps", "duration": "10 min", "lesson": "L'eau est le principal solvant biologique et participe au transport des substances, aux réactions chimiques, à la thermorégulation et au maintien du volume sanguin. Le corps régule finement son équilibre hydrique grâce notamment à la soif et aux reins. Les besoins varient selon la température, l'activité, l'alimentation et les pertes.", "example": "Après une activité physique ou par forte chaleur, les pertes d'eau augmentent. Le corps peut alors augmenter la sensation de soif et concentrer davantage les urines.", "exercise": "Pendant une journée, observe simplement les moments où tu bois et les situations qui déclenchent ta soif. Ne cherche pas à forcer une quantité précise.", "question": "Quels signes corporels te font habituellement penser que tu as besoin de boire ?", "reflection": "Note ce que tu observes sans chercher à interpréter trop vite."}}}]};
 let db=JSON.parse(localStorage.getItem(KEY)||"null")||initial;
@@ -71,7 +79,11 @@ function renderCourses(){
 function renderTools(){
  document.getElementById("tools").innerHTML=`<div class="card"><h2>➕ Ajouter une formation</h2><p>Pour une formation créée avec moi, utilise le bouton <b>Importer une formation</b> ci-dessous. Pour une formation simple, tu peux aussi la créer manuellement.</p>
 <label>Nom</label><input id="newName" placeholder="Ex. Mémoire et apprentissage"><label>Nombre de jours</label><input id="newTotal" type="number" min="1" value="30"><div class="actions" style="margin-top:10px"><button onclick="manualAdd()">＋ Créer</button><button class="secondary" onclick="importCourse()">📥 Importer une formation</button></div></div>
-<div class="card"><h2>💾 Sauvegarde</h2><div class="actions"><button onclick="exportAll()">Exporter toutes mes données</button><button class="secondary" onclick="importAll()">Restaurer une sauvegarde complète</button></div><p class="small">À utiliser avant une grosse modification ou un changement de téléphone.</p></div>`;
+<div class="card"><h2>☁️ Synchronisation</h2>
+<div id="authBox"></div>
+<p class="small">La synchronisation permet de retrouver formations, progression et notes sur ton PC et ton téléphone.</p>
+</div>
+<div class="card"><h2>💾 Sauvegarde locale</h2><div class="actions"><button onclick="exportAll()">Exporter toutes mes données</button><button class="secondary" onclick="importAll()">Restaurer une sauvegarde complète</button></div><p class="small">À conserver comme sauvegarde de secours.</p></div>`;
 }
 function openCourse(id){page("today");setTimeout(()=>document.getElementById("today").scrollIntoView({behavior:"smooth"}),30)}
 function openChat(id,day){alert("Ouvre la conversation ChatGPT de cette formation et demande : « Donne-moi le Jour "+day+" de cette formation, séance de 10 minutes. »")}
@@ -83,6 +95,60 @@ function exportAll(){download("centre-formations-sauvegarde.json",JSON.stringify
 function importAll(){let i=document.createElement("input");i.type="file";i.accept=".json";i.onchange=e=>{let r=new FileReader();r.onload=()=>{try{let x=JSON.parse(r.result);if(!x.courses)throw Error();db=x;save();render();alert("Sauvegarde restaurée.")}catch(_){alert("Sauvegarde invalide.")}};r.readAsText(e.target.files[0])};i.click()}
 function download(name,text,type){let a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click()}
 function toggleDark(){document.body.classList.toggle("dark");localStorage.setItem("dark",document.body.classList.contains("dark"))}
+
+async function syncUI(){
+ const box=document.getElementById("authBox");
+ if(!box) return;
+ if(!cloudEnabled){
+   box.innerHTML='<div class="notice">☁️ La synchronisation doit être configurée. Il faut créer un projet Supabase puis renseigner son URL et sa clé dans index.html.</div>';
+   return;
+ }
+ const {data:{session}}=await supabaseClient.auth.getSession();
+ if(session){
+   box.innerHTML=`<div class="muted">Connecté : ${esc(session.user.email)}</div>
+   <div class="actions" style="margin-top:10px">
+   <button onclick="pushCloud()">☁️ Envoyer vers le cloud</button>
+   <button class="secondary" onclick="pullCloud()">⬇️ Récupérer du cloud</button>
+   <button class="secondary" onclick="signOutCloud()">Se déconnecter</button></div>`;
+ }else{
+   box.innerHTML=`<label>Email</label><input id="authEmail" type="email" placeholder="ton@email.fr">
+   <label>Mot de passe</label><input id="authPassword" type="password" placeholder="6 caractères minimum">
+   <div class="actions" style="margin-top:10px"><button onclick="signInCloud()">🔐 Se connecter</button><button class="secondary" onclick="signUpCloud()">Créer le compte</button></div>`;
+ }
+}
+async function signUpCloud(){
+ const email=document.getElementById("authEmail").value.trim(), password=document.getElementById("authPassword").value;
+ if(!email||password.length<6) return alert("Indique un email et un mot de passe d'au moins 6 caractères.");
+ const {error}=await supabaseClient.auth.signUp({email,password});
+ if(error) return alert(error.message);
+ alert("Compte créé. Vérifie ton email si Supabase demande une confirmation, puis connecte-toi.");
+ syncUI();
+}
+async function signInCloud(){
+ const email=document.getElementById("authEmail").value.trim(), password=document.getElementById("authPassword").value;
+ const {error}=await supabaseClient.auth.signInWithPassword({email,password});
+ if(error) return alert(error.message);
+ await pullCloud();
+ syncUI();
+}
+async function signOutCloud(){await supabaseClient.auth.signOut();syncUI();}
+async function pushCloud(){
+ const {data:{session}}=await supabaseClient.auth.getSession();
+ if(!session) return alert("Connecte-toi d'abord.");
+ const payload={user_id:session.user.id,data:db,updated_at:new Date().toISOString()};
+ const {error}=await supabaseClient.from("training_data").upsert(payload,{onConflict:"user_id"});
+ if(error) return alert("Erreur de synchronisation : "+error.message);
+ alert("☁️ Données envoyées dans le cloud.");
+}
+async function pullCloud(){
+ const {data:{session}}=await supabaseClient.auth.getSession();
+ if(!session) return alert("Connecte-toi d'abord.");
+ const {data,error}=await supabaseClient.from("training_data").select("data,updated_at").eq("user_id",session.user.id).maybeSingle();
+ if(error) return alert("Erreur de synchronisation : "+error.message);
+ if(!data) return alert("Aucune donnée cloud pour ce compte.");
+ db=data.data; save(); render(); syncUI(); alert("⬇️ Données récupérées sur cet appareil.");
+}
+
 if(localStorage.getItem("dark")==="true")document.body.classList.add("dark");
 
 function goTo(id){
@@ -100,6 +166,7 @@ document.getElementById("navCourses").addEventListener("click",()=>goTo("courses
 document.getElementById("navTools").addEventListener("click",()=>goTo("tools"));
 
 render();
+syncUI();
 if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
 </body></html>
