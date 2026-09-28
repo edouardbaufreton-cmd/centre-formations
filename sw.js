@@ -1,4 +1,4 @@
-const CACHE_NAME="centre-formations-v3-1";
+const CACHE_NAME="centre-formations-v4";
 self.addEventListener("install",event=>{
   self.skipWaiting();
   event.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(["./","./index.html","./manifest.json"])));
