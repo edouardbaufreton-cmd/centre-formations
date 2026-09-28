@@ -1,5 +1,90 @@
-<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#111827"><link rel="manifest" href="manifest.json"><title>Centre de formations</title><style>*{box-sizing:border-box}body{margin:0;font-family:system-ui;background:#f3f4f6;color:#111827}header{background:#111827;color:white;padding:22px 18px;position:sticky;top:0}main{max-width:760px;margin:auto;padding:16px}.card{background:white;border-radius:16px;padding:18px;margin:12px 0;box-shadow:0 2px 10px #0001}.row{display:flex;justify-content:space-between;gap:12px}.title{font-size:18px;font-weight:700}.muted{color:#6b7280;font-size:14px}.bar{height:9px;background:#e5e7eb;border-radius:9px;overflow:hidden;margin:12px 0}.fill{height:100%;background:#2563eb}button{border:0;border-radius:10px;padding:10px 14px;background:#111827;color:white;font-weight:600}button.secondary{background:#e5e7eb;color:#111827}.actions{display:flex;gap:8px;flex-wrap:wrap}.small{font-size:13px}</style></head><body><header><h1>📚 Centre de formations</h1><div>Tableau de bord de tes formations</div></header><main id="app"></main><script>
-const K="formations";let d=JSON.parse(localStorage.getItem(K)||"null")||{f:[{id:"colere",n:"Maîtrise et transformation de la colère",day:1,total:30},{id:"eau",n:"Eau H₂O & biomécanismes du corps",day:1,total:30}]};
-function save(){localStorage.setItem(K,JSON.stringify(d))}function render(){app.innerHTML=d.f.map(x=>{let p=Math.min(100,Math.round((x.day-1)/x.total*100));return `<section class="card"><div class="row"><div><div class="title">${x.n}</div><div class="muted">Jour ${x.day} / ${x.total}</div></div><b>${p}%</b></div><div class="bar"><div class="fill" style="width:${p}%"></div></div><div class="actions"><button onclick="course('${x.id}')">▶ Continuer</button><button class="secondary" onclick="done('${x.id}')">✓ Jour terminé</button><button class="secondary" onclick="del('${x.id}')">Supprimer</button></div></section>`}).join("")+`<section class="card"><button onclick="add()">＋ Ajouter une formation</button><p class="muted small">Les données sont conservées sur cet appareil.</p></section>`}
-function course(id){let x=d.f.find(a=>a.id==id);alert("📚 "+x.n+"\n\nJour "+x.day+"/"+x.total+"\n\nOuvre ta conversation ChatGPT correspondante pour suivre le cours du jour.")}function done(id){let x=d.f.find(a=>a.id==id);if(x.day<x.total)x.day++;else alert("🎉 Formation terminée !");save();render()}function add(){let n=prompt("Nom de la formation ?");if(!n)return;let t=parseInt(prompt("Nombre de jours ?","30"))||30;d.f.push({id:Date.now(),n,day:1,total:t});save();render()}function del(id){if(confirm("Supprimer cette formation ?")){d.f=d.f.filter(x=>x.id!=id);save();render()}}render();if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js");
-</script></body></html>
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<link rel="manifest" href="manifest.json">
+<title>Centre de formations</title>
+<style>
+:root{--bg:#f3f4f6;--card:#fff;--text:#111827;--muted:#64748b;--line:#e2e8f0;--accent:#2563eb;--dark:#111827;--ok:#15803d}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:var(--text)}
+body.dark{--bg:#0f172a;--card:#1e293b;--text:#f8fafc;--muted:#94a3b8;--line:#334155}
+header{background:var(--dark);color:#fff;padding:18px 16px;position:sticky;top:0;z-index:10}
+.header{max-width:900px;margin:auto;display:flex;justify-content:space-between;align-items:center;gap:12px}
+h1{margin:0;font-size:22px}.sub{opacity:.75;font-size:13px;margin-top:3px}
+main{max-width:900px;margin:auto;padding:14px 14px 80px}.nav{display:flex;gap:8px;overflow:auto;padding:4px 0 12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin:12px 0;box-shadow:0 2px 10px #0000000d}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.stat{text-align:center}.stat b{display:block;font-size:22px}.stat span{font-size:12px;color:var(--muted)}
+.row{display:flex;justify-content:space-between;align-items:center;gap:12px}.title{font-size:18px;font-weight:750}.muted{color:var(--muted);font-size:14px}
+.bar{height:9px;background:var(--line);border-radius:99px;overflow:hidden;margin:12px 0}.fill{height:100%;background:var(--accent);transition:.25s}
+.actions{display:flex;gap:8px;flex-wrap:wrap}button{border:0;border-radius:10px;padding:10px 13px;background:var(--dark);color:#fff;font-weight:650;cursor:pointer}button.secondary{background:var(--line);color:var(--text)}button.ok{background:var(--ok)}button.danger{background:#b91c1c}
+input,textarea{width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text);font:inherit}label{display:block;font-weight:650;font-size:14px;margin:10px 0 5px}
+.lesson{line-height:1.6}.lesson h2{margin:8px 0}.lesson h3{margin-bottom:5px}.pill{display:inline-block;padding:4px 8px;border-radius:99px;background:#dbeafe;color:#1d4ed8;font-size:12px;font-weight:700}
+.hidden{display:none}.small{font-size:12px;color:var(--muted)}.notice{padding:12px;border-radius:10px;background:#fef3c7;color:#92400e}
+body.dark .notice{background:#422006;color:#fde68a}
+@media(max-width:560px){.grid{grid-template-columns:1fr 1fr 1fr}.title{font-size:16px}button{padding:10px 11px}}
+</style>
+</head>
+<body>
+<header><div class="header"><div><h1>📚 Centre de formations</h1><div class="sub">Apprendre 10 minutes par jour</div></div><button class="secondary" onclick="toggleDark()">🌙</button></div></header>
+<main>
+<div class="nav">
+<button onclick="page('home')">🏠 Accueil</button>
+<button onclick="page('today')">🎯 Aujourd'hui</button>
+<button onclick="page('courses')">📚 Formations</button>
+<button onclick="page('tools')">⚙️ Outils</button>
+</div>
+<section id="home"></section><section id="today" class="hidden"></section><section id="courses" class="hidden"></section><section id="tools" class="hidden"></section>
+</main>
+<script>
+const KEY="centre_formations_v3";
+const initial={"version": 3, "settings": {"dark": false}, "courses": [{"id": "colere", "name": "Maîtrise et transformation de la colère", "total": 30, "day": 1, "completed": [], "notes": {}, "lessons": {"1": {"title": "La colère est un signal, pas un ordre", "duration": "10 min", "lesson": "La colère apparaît souvent lorsqu'une valeur, une limite ou un besoin important semble menacé. L'émotion prépare le corps à agir : elle augmente l'énergie, focalise l'attention et pousse vers une réponse rapide. Le point clé est de distinguer l'émotion de l'action : ressentir de la colère ne t'oblige pas à agir sous son impulsion.", "example": "Quelqu'un critique ton travail. Première réaction : envie de répondre immédiatement. Pause : tu identifies la critique, ce qu'elle touche chez toi, puis tu choisis une réponse utile.", "exercise": "Repense à une situation récente. Note : 1) déclencheur, 2) sensation corporelle, 3) pensée automatique, 4) impulsion, 5) action réellement choisie.", "question": "Qu'est-ce que ta colère cherchait probablement à protéger ou à défendre ?", "reflection": "Écris quelques lignes dans tes notes."}}}, {"id": "eau", "name": "Eau H₂O & biomécanismes du corps", "total": 30, "day": 1, "completed": [], "notes": {}, "lessons": {"1": {"title": "Pourquoi l'eau est essentielle au corps", "duration": "10 min", "lesson": "L'eau est le principal solvant biologique et participe au transport des substances, aux réactions chimiques, à la thermorégulation et au maintien du volume sanguin. Le corps régule finement son équilibre hydrique grâce notamment à la soif et aux reins. Les besoins varient selon la température, l'activité, l'alimentation et les pertes.", "example": "Après une activité physique ou par forte chaleur, les pertes d'eau augmentent. Le corps peut alors augmenter la sensation de soif et concentrer davantage les urines.", "exercise": "Pendant une journée, observe simplement les moments où tu bois et les situations qui déclenchent ta soif. Ne cherche pas à forcer une quantité précise.", "question": "Quels signes corporels te font habituellement penser que tu as besoin de boire ?", "reflection": "Note ce que tu observes sans chercher à interpréter trop vite."}}}]};
+let db=JSON.parse(localStorage.getItem(KEY)||"null")||initial;
+db.courses.forEach(c=>{c.completed=c.completed||[];c.notes=c.notes||{};c.lessons=c.lessons||{}});
+function save(){localStorage.setItem(KEY,JSON.stringify(db))}
+function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+function pct(c){return Math.round((c.completed.length/c.total)*100)}
+function current(c){return Math.min(c.total,c.completed.length+1)}
+function page(id){["home","today","courses","tools"].forEach(x=>document.getElementById(x).classList.toggle("hidden",x!==id));render()}
+function render(){
+ renderHome();renderToday();renderCourses();renderTools();
+}
+function renderHome(){
+ let done=db.courses.reduce((a,c)=>a+c.completed.length,0);
+ document.getElementById("home").innerHTML=`<div class="card"><div class="grid"><div class="stat"><b>${db.courses.length}</b><span>formations</span></div><div class="stat"><b>${done}</b><span>jours terminés</span></div><div class="stat"><b>${db.courses.filter(c=>c.completed.length<c.total).length}</b><span>en cours</span></div></div></div>
+ ${db.courses.map(c=>card(c)).join("")}`;
+}
+function card(c){return `<div class="card"><div class="row"><div><div class="title">${esc(c.name)}</div><div class="muted">Jour ${current(c)} / ${c.total} · ${pct(c)}%</div></div><b>${pct(c)}%</b></div><div class="bar"><div class="fill" style="width:${pct(c)}%"></div></div><div class="actions"><button onclick="openCourse('${c.id}')">▶ Cours du jour</button><button class="secondary" onclick="page('courses')">Voir la formation</button></div></div>`}
+function renderToday(){
+ let active=db.courses.filter(c=>c.completed.length<c.total);
+ document.getElementById("today").innerHTML=active.length?active.map(c=>lessonCard(c)).join(""):`<div class="card"><h2>🎉 Toutes les formations sont terminées !</h2></div>`;
+}
+function lessonCard(c){
+ let d=current(c),l=c.lessons[String(d)];
+ if(!l)return `<div class="card"><span class="pill">${esc(c.name)} · Jour ${d}</span><div class="notice" style="margin-top:10px">Le contenu du jour ${d} n'est pas encore chargé. Demande-moi ce cours dans ChatGPT ou importe une mise à jour de la formation.</div><div class="actions" style="margin-top:10px"><button onclick="openChat('${c.id}',${d})">💬 Ouvrir ChatGPT</button></div></div>`;
+ return `<div class="card lesson"><span class="pill">${esc(c.name)} · Jour ${d}/${c.total}</span><h2>${esc(l.title)}</h2><h3>📖 Cours · ${esc(l.duration||"10 min")}</h3><p>${esc(l.lesson)}</p><h3>💡 Exemple</h3><p>${esc(l.example)}</p><h3>🧪 Exercice</h3><p>${esc(l.exercise)}</p><h3>💭 Question</h3><p>${esc(l.question)}</p><label>✍️ Ma réponse / mes notes</label><textarea id="note_${c.id}" rows="4" placeholder="Écris ici...">${esc(c.notes[String(d)]||"")}</textarea><div class="actions" style="margin-top:10px"><button class="secondary" onclick="saveNote('${c.id}',${d})">💾 Enregistrer</button><button class="ok" onclick="complete('${c.id}',${d})">✓ Terminer le jour</button></div></div>`;
+}
+function renderCourses(){
+ document.getElementById("courses").innerHTML=`<div class="card"><h2>📚 Mes formations</h2><p class="muted">Chaque formation possède son propre compteur et ses cours quotidiens.</p></div>${db.courses.map(c=>card(c)).join("")}`;
+}
+function renderTools(){
+ document.getElementById("tools").innerHTML=`<div class="card"><h2>➕ Ajouter une formation</h2><p>Pour une formation créée avec moi, utilise le bouton <b>Importer une formation</b> ci-dessous. Pour une formation simple, tu peux aussi la créer manuellement.</p>
+<label>Nom</label><input id="newName" placeholder="Ex. Mémoire et apprentissage"><label>Nombre de jours</label><input id="newTotal" type="number" min="1" value="30"><div class="actions" style="margin-top:10px"><button onclick="manualAdd()">＋ Créer</button><button class="secondary" onclick="importCourse()">📥 Importer une formation</button></div></div>
+<div class="card"><h2>💾 Sauvegarde</h2><div class="actions"><button onclick="exportAll()">Exporter toutes mes données</button><button class="secondary" onclick="importAll()">Restaurer une sauvegarde complète</button></div><p class="small">À utiliser avant une grosse modification ou un changement de téléphone.</p></div>`;
+}
+function openCourse(id){page("today");setTimeout(()=>document.getElementById("today").scrollIntoView({behavior:"smooth"}),30)}
+function openChat(id,day){alert("Ouvre la conversation ChatGPT de cette formation et demande : « Donne-moi le Jour "+day+" de cette formation, séance de 10 minutes. »")}
+function saveNote(id,day){let c=db.courses.find(x=>x.id===id);let v=document.getElementById("note_"+id).value;c.notes[String(day)]=v;save();alert("Note enregistrée.")}
+function complete(id,day){let c=db.courses.find(x=>x.id===id);if(!c.completed.includes(day)){c.completed.push(day);c.completed.sort((a,b)=>a-b);save();render();page("today");alert(day<c.total?"Jour terminé ! Passe au jour suivant.":"🎉 Formation terminée !")}}
+function manualAdd(){let n=document.getElementById("newName").value.trim(),t=Number(document.getElementById("newTotal").value)||30;if(!n)return alert("Indique un nom.");let id="f_"+Date.now();db.courses.push({id,name:n,total:t,completed:[],notes:{},lessons:{}});save();render();alert("Formation créée.")}
+function importCourse(){let i=document.createElement("input");i.type="file";i.accept=".json";i.onchange=e=>{let r=new FileReader();r.onload=()=>{try{let p=JSON.parse(r.result);if(!p.name||!p.total)throw Error();let c={id:p.id||("f_"+Date.now()),name:p.name,total:Number(p.total),completed:[],notes:{},lessons:p.lessons||{}};let old=db.courses.findIndex(x=>x.id===c.id);if(old>=0){c.completed=db.courses[old].completed;c.notes=db.courses[old].notes;db.courses[old]=c}else db.courses.push(c);save();render();alert("Formation importée. Progression conservée si elle existait.");}catch(_){alert("Fichier de formation invalide.")}};r.readAsText(e.target.files[0])};i.click()}
+function exportAll(){download("centre-formations-sauvegarde.json",JSON.stringify(db,null,2),"application/json")}
+function importAll(){let i=document.createElement("input");i.type="file";i.accept=".json";i.onchange=e=>{let r=new FileReader();r.onload=()=>{try{let x=JSON.parse(r.result);if(!x.courses)throw Error();db=x;save();render();alert("Sauvegarde restaurée.")}catch(_){alert("Sauvegarde invalide.")}};r.readAsText(e.target.files[0])};i.click()}
+function download(name,text,type){let a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click()}
+function toggleDark(){document.body.classList.toggle("dark");localStorage.setItem("dark",document.body.classList.contains("dark"))}
+if(localStorage.getItem("dark")==="true")document.body.classList.add("dark");
+render();
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+</body></html>

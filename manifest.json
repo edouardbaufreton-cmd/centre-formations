@@ -1,1 +1,5 @@
-{"name":"Centre de formations","short_name":"Formations","start_url":"./","display":"standalone","background_color":"#f3f4f6","theme_color":"#111827","lang":"fr"}
+{
+"name":"Centre de formations","short_name":"Formations","start_url":"./","display":"standalone",
+"background_color":"#f3f4f6","theme_color":"#111827","lang":"fr",
+"description":"Centre personnel de formations quotidiennes."
+}
