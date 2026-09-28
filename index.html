@@ -30,10 +30,10 @@ body.dark .notice{background:#422006;color:#fde68a}
 <header><div class="header"><div><h1>📚 Centre de formations</h1><div class="sub">Apprendre 10 minutes par jour</div></div><button class="secondary" onclick="toggleDark()">🌙</button></div></header>
 <main>
 <div class="nav">
-<button onclick="page('home')">🏠 Accueil</button>
-<button onclick="page('today')">🎯 Aujourd'hui</button>
-<button onclick="page('courses')">📚 Formations</button>
-<button onclick="page('tools')">⚙️ Outils</button>
+<button id="navHome">🏠 Accueil</button>
+<button id="navToday">🎯 Aujourd'hui</button>
+<button id="navCourses">📚 Formations</button>
+<button id="navTools">⚙️ Outils</button>
 </div>
 <section id="home"></section><section id="today" class="hidden"></section><section id="courses" class="hidden"></section><section id="tools" class="hidden"></section>
 </main>
@@ -84,6 +84,21 @@ function importAll(){let i=document.createElement("input");i.type="file";i.accep
 function download(name,text,type){let a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click()}
 function toggleDark(){document.body.classList.toggle("dark");localStorage.setItem("dark",document.body.classList.contains("dark"))}
 if(localStorage.getItem("dark")==="true")document.body.classList.add("dark");
+
+function goTo(id){
+  ["home","today","courses","tools"].forEach(x=>{
+    const el=document.getElementById(x);
+    if(el) el.classList.toggle("hidden", x!==id);
+  });
+  render();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+document.getElementById("navHome").addEventListener("click",()=>goTo("home"));
+document.getElementById("navToday").addEventListener("click",()=>goTo("today"));
+document.getElementById("navCourses").addEventListener("click",()=>goTo("courses"));
+document.getElementById("navTools").addEventListener("click",()=>goTo("tools"));
+
 render();
 if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
