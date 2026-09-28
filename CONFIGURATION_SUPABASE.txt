@@ -1,0 +1,26 @@
+CONFIGURATION V4 — SYNCHRONISATION PC / TELEPHONE
+
+1. Ouvre index.html avec le Bloc-notes Windows.
+2. Fais Ctrl+F et cherche :
+   COLLE_ICI_L_URL_DE_TON_PROJET
+3. Remplace uniquement ce texte par ton Project URL Supabase.
+   Exemple :
+   const SUPABASE_URL = "https://xxxxxxxx.supabase.co";
+
+4. Cherche ensuite :
+   COLLE_ICI_LA_CLE_ANON_PUBLIQUE
+5. Remplace uniquement ce texte par ta clé Publishable (sb_publishable_...).
+   Exemple :
+   const SUPABASE_ANON_KEY = "sb_publishable_xxxxxxxxx";
+
+IMPORTANT :
+- N'utilise PAS la clé "Secret keys" / sb_secret_...
+- Ne supprime pas les guillemets autour des valeurs.
+- Enregistre index.html après modification.
+
+6. Teste index.html sur le PC.
+7. Dans Outils > Synchronisation, crée ton compte / connecte-toi.
+8. Depuis l'appareil contenant les données actuelles : "Envoyer vers le cloud".
+9. Sur le téléphone : connecte-toi au même compte puis "Récupérer du cloud".
+
+Pour GitHub : après le test, remplace l'ancien index.html par le nouveau index.html.
